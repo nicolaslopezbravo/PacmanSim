@@ -18,7 +18,7 @@ public class PacSimRNNA implements PacAction
 {
     private List<Point> path;
     private int simTime;
-    Boolean plan = true;
+    private static boolean plan = true;
 
     public PacSimRNNA(String fname)
     {
@@ -42,26 +42,31 @@ public class PacSimRNNA implements PacAction
      public void PacPlanner(PacCell [][] grid, PacmanCell pc)
      {
         List<Point> food = PacUtils.findFood(grid);
-        
-        Object[] foodArray = food.toArray();
-        
+            
+        // the cost of pacman to getting to the food (initial start state) will be determined and set as the first row
+        // of the cost table
+
         int size = PacUtils.numFood(grid);
-        System.out.println("OLIVER");
+        int [] foodArray = new int[size + 1];
         int [][] cost = new int[size + 1][size + 1];
 
         // Set each starting point
+        Point pacman = pc.getLoc();
         for(int i = 0; i < size; i++)
         {
-            cost[0][i] = foodArray[i];
-            System.out.println("costttt " + cost[0][i]);
+            cost[i][0] = PacUtils.manhattanDistance(pacman,food.get(i));
+            // Debugging
+            System.out.println("cost: " + cost[i][0]);
         }
 
+        // filling out the table
         for(int i = 0; i < size; i++)
         {
+            for(int j = 0; i < size; i++)
+            {
 
+            }
         }
-        
-        
      }
 
      @Override
@@ -70,11 +75,10 @@ public class PacSimRNNA implements PacAction
   
         PacCell[][] grid = (PacCell[][]) state;
         PacmanCell pc = PacUtils.findPacman(grid);
-
         
         // make sure Pac-Man is in this game
         if(pc == null) return null;
-
+        
         if(plan)
         {
             PacPlanner(grid, pc);
@@ -86,15 +90,15 @@ public class PacSimRNNA implements PacAction
         // measure and generate a path to that target
         if(path.isEmpty()) 
         {
-           Point tgt = PacUtils.nearestFood(pc.getLoc(), grid);
+            Point tgt = PacUtils.nearestFood(pc.getLoc(), grid);
 
-           path = BFSPath.getPath(grid, pc.getLoc(), tgt);
+            path = BFSPath.getPath(grid, pc.getLoc(), tgt);
 
            
-           System.out.println("Pac-Man currently at: [ " + pc.getLoc().x
+            System.out.println("Pac-Man currently at: [ " + pc.getLoc().x
                  + ", " + pc.getLoc().y + " ]");
 
-           System.out.println("Setting new target  : [ " + tgt.x
+            System.out.println("Setting new target  : [ " + tgt.x
                  + ", " + tgt.y + " ]");
         }
         
