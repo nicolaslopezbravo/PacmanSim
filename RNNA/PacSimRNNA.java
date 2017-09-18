@@ -12,7 +12,62 @@ Nicolas Lopez
 
 9-5-17
 */
+class Node
+{
+    private int size;
+    public ArrayList<Point> path = new ArrayList<Point>();
+    public int cost;
 
+    Node(Point position, int c)
+    {
+        // add initial starting point and cost to get there
+        path.add(position);
+        cost = c;
+        size = 1;
+    }
+
+    void addLocation(Point position)
+    {
+        // add another position
+        path.add(position);
+        size++;
+    }
+
+    Point getLocation()
+    {
+        //get the last location added
+        return path.get(size);
+    }
+
+    ArrayList<Point> getPath()
+    {
+        //get the entire path
+        return path;
+    }
+
+    void setCost(int c)
+    {
+        // set the cost for the current path
+        cost = c;
+    }
+
+    int getCost()
+    {
+        // get the cost for the current path
+        return cost;
+    }
+
+    void print()
+    {
+        System.out.println("Cost of this path is: " + cost);
+        System.out.println("Positions of the path are: ");
+        for(int i = 0; i < size; i++)
+        {
+            System.out.print(path.get(i) + " ");
+        }
+        System.out.println();
+    }
+}
 
 public class PacSimRNNA implements PacAction
 {
@@ -43,30 +98,44 @@ public class PacSimRNNA implements PacAction
      {
         List<Point> food = PacUtils.findFood(grid);
             
-        // the cost of pacman to getting to the food (initial start state) will be determined and set as the first row
-        // of the cost table
+        // The cost of pacman to getting to the food (initial start state) will be determined and set as the initial
+        // value of the cost table. The cost table will hold only one row, continuously updating the value of each node
+        // holding the total cost and the path taken as values.
 
         int size = PacUtils.numFood(grid);
-        int [] foodArray = new int[size + 1];
-        int [][] cost = new int[size + 1][size + 1];
 
-        // Set each starting point
+        ArrayList<Node> costTable = new ArrayList<Node>(size);
+
+        // Initialize the cost table
         Point pacman = pc.getLoc();
-        for(int i = 0; i < size; i++)
+        for(int row = 0; row < size; row++)
         {
-            cost[i][0] = PacUtils.manhattanDistance(pacman,food.get(i));
-            // Debugging
-            System.out.println("cost: " + cost[i][0]);
+            // Calculate the cost to the each initial food
+            int cost = PacUtils.manhattanDistance(pacman, food.get(row));
+            // Calculate the new postion of the possible path
+            Point position = food.get(row);
+            // Add the new cost and postion of the possible path to the list of options
+            costTable.add(new Node(position, cost));
         }
 
-        // filling out the table
+        // print out values
+
         for(int i = 0; i < size; i++)
         {
-            for(int j = 0; i < size; i++)
+            Node n = costTable.get(i);
+            n.print();
+        }
+        
+        /* filling out the table
+        for(int row = 0; row < size; row++)
+        {
+            pacman = food.get(row);
+            for(int col = 0; col < size; col++)
             {
-
+                cot[row][col] = PacUtils.manhattanDistance(pacman, food.get(col));
+                pacman = food.get(col);
             }
-        }
+        } */
      }
 
      @Override
