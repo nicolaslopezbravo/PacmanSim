@@ -17,14 +17,14 @@ class Node
 {
     private int size;
     public ArrayList<Point> path = new ArrayList<Point>();
-    public PacCell[][] grid;
+    public ArrayList<Point> grid;
     public int cost = 0;
 
     Node(Point position, int c, PacCell[][] grid)
     {
         // add initial starting point and cost to get there
         path.add(position);
-        this.grid = grid;
+        this.grid = PacUtils.findFood(grid);
         setCost(c);
         size = 1;
     }
@@ -76,16 +76,25 @@ class Node
         }
         System.out.println();
     }
+
+    public void removePoint(Point f)
+    {
+        if(grid.contains(f))
+        {
+            grid.remove(f);
+        }
+    }
+
+    public ArrayList<Point> getGrid()
+    {
+        return this.grid;
+    }  
+
     @Override
     public Node clone()
     {
         return new Node(path,cost);
-    }
-    public PacCell[][] getGrid()
-    {
-        return this.grid;
-    }
-    
+    }      
 }
 
 public class PacSimRNNA implements PacAction
@@ -111,7 +120,7 @@ public class PacSimRNNA implements PacAction
     {
         simTime = 0;
         path = new ArrayList();
-     }
+    }
 
      public void PacPlanner(PacCell [][] grid, PacmanCell pc)
      {
@@ -136,19 +145,26 @@ public class PacSimRNNA implements PacAction
             // Add the new cost and postion of the possible path to the list of options
             costTable.add(new Node(position, cost, PacUtils.cloneGrid(grid)));
         }
-        
+        int size = numFood;
         for(int i = 0; i < numFood; i++)
         {
-            //while(foodRemains(grid)){}
-            
             Node n = costTable.get(i);
-            Point loc = n.getLocation();
-            Point newLoc = PacUtils.nearestFood(loc,n.getGrid());
-            // need to account for thrashing by getting nearest food except eaten food
-            int newCost = PacUtils.manhattanDistance(loc,newLoc);
-            n.setCost(newCost);
-            n.addLocation(newLoc);
-            // test to find multiple foods at same distance if so, clone and add to cost table, also increase size by 1
+            ArrayList<Point> gr = n.getGrid();
+            while(gr.size() > size);
+            {
+                // Debugging
+                System.out.println("Number of food remaining " + PacUtils.numFood(gr));
+                Point loc = n.getLocation();
+                // Transform gr to PacCell[][]
+                Point newLoc = PacUtils.nearestFood(loc,gr);
+                // Prevent thrashing
+                gr.remove(newLoc);
+                // test to find multiple foods at same distance if so, clone and add to cost table, also increase size by 1
+                int newCost = PacUtils.manhattanDistance(loc,newLoc);
+                n.setCost(newCost);
+                n.addLocation(newLoc);
+                n.setGrid(gr);
+            }
         }
      }
 
