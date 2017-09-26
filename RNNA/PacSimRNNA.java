@@ -1,5 +1,6 @@
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import pacsim.*;
 
@@ -16,48 +17,56 @@ class Node
 {
     private int size;
     public ArrayList<Point> path = new ArrayList<Point>();
-    public int cost;
+    public PacCell[][] grid;
+    public int cost = 0;
 
-    Node(Point position, int c)
+    Node(Point position, int c, PacCell[][] grid)
     {
         // add initial starting point and cost to get there
         path.add(position);
-        cost = c;
+        this.grid = grid;
+        setCost(c);
         size = 1;
     }
 
-    void addLocation(Point position)
+    Node(ArrayList<Point> path, int cost)
+    {
+        this.path = path;
+        this.cost = cost;
+    }
+
+    public void addLocation(Point position)
     {
         // add another position
         path.add(position);
         size++;
     }
 
-    Point getLocation()
+    public Point getLocation()
     {
         //get the last location added
-        return path.get(size);
+        return path.get(size-1);
     }
 
-    ArrayList<Point> getPath()
+    public ArrayList<Point> getPath()
     {
         //get the entire path
         return path;
     }
 
-    void setCost(int c)
+    public void setCost(int c)
     {
         // set the cost for the current path
-        cost = c;
+        cost += c;
     }
 
-    int getCost()
+    public int getCost()
     {
         // get the cost for the current path
         return cost;
     }
 
-    void print()
+    public void print()
     {
         System.out.println("Cost of this path is: " + cost);
         System.out.println("Positions of the path are: ");
@@ -67,6 +76,16 @@ class Node
         }
         System.out.println();
     }
+    @Override
+    public Node clone()
+    {
+        return new Node(path,cost);
+    }
+    public PacCell[][] getGrid()
+    {
+        return this.grid;
+    }
+    
 }
 
 public class PacSimRNNA implements PacAction
@@ -102,40 +121,35 @@ public class PacSimRNNA implements PacAction
         // value of the cost table. The cost table will hold only one row, continuously updating the value of each node
         // holding the total cost and the path taken as values.
 
-        int size = PacUtils.numFood(grid);
+        int numFood = PacUtils.numFood(grid);
 
-        ArrayList<Node> costTable = new ArrayList<Node>(size);
+        ArrayList<Node> costTable = new ArrayList<Node>(numFood);
 
         // Initialize the cost table
         Point pacman = pc.getLoc();
-        for(int row = 0; row < size; row++)
+        for(int row = 0; row < numFood; row++)
         {
             // Calculate the cost to the each initial food
             int cost = PacUtils.manhattanDistance(pacman, food.get(row));
             // Calculate the new postion of the possible path
             Point position = food.get(row);
             // Add the new cost and postion of the possible path to the list of options
-            costTable.add(new Node(position, cost));
-        }
-
-        // print out values
-
-        for(int i = 0; i < size; i++)
-        {
-            Node n = costTable.get(i);
-            n.print();
+            costTable.add(new Node(position, cost, PacUtils.cloneGrid(grid)));
         }
         
-        /* filling out the table
-        for(int row = 0; row < size; row++)
+        for(int i = 0; i < numFood; i++)
         {
-            pacman = food.get(row);
-            for(int col = 0; col < size; col++)
-            {
-                cot[row][col] = PacUtils.manhattanDistance(pacman, food.get(col));
-                pacman = food.get(col);
-            }
-        } */
+            //while(foodRemains(grid)){}
+            
+            Node n = costTable.get(i);
+            Point loc = n.getLocation();
+            Point newLoc = PacUtils.nearestFood(loc,n.getGrid());
+            // need to account for thrashing by getting nearest food except eaten food
+            int newCost = PacUtils.manhattanDistance(loc,newLoc);
+            n.setCost(newCost);
+            n.addLocation(newLoc);
+            // test to find multiple foods at same distance if so, clone and add to cost table, also increase size by 1
+        }
      }
 
      @Override
