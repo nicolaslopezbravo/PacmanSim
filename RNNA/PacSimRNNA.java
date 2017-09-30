@@ -122,6 +122,16 @@ public class PacSimRNNA implements PacAction
         path = new ArrayList();
     }
 
+    private int mannyDistance(Point p, Point q)
+    {
+        double x1 = p.getX();
+        double y1 = p.getY();
+        double x2 = q.getX();
+        double y2 = q.getY();
+
+        return Math.abs(x1-x2) + Math.abs(y1 - y2);
+    }
+
      public void PacPlanner(PacCell [][] grid, PacmanCell pc)
      {
         List<Point> food = PacUtils.findFood(grid);
@@ -138,10 +148,12 @@ public class PacSimRNNA implements PacAction
         Point pacman = pc.getLoc();
         for(int row = 0; row < numFood; row++)
         {
-            // Calculate the cost to the each initial food
-            int cost = PacUtils.manhattanDistance(pacman, food.get(row));
             // Calculate the new postion of the possible path
             Point position = food.get(row);
+
+            // Calculate the cost to the each initial food
+            int cost = PacUtils.manhattanDistance(pacman, position);
+            
             // Add the new cost and postion of the possible path to the list of options
             costTable.add(new Node(position, cost, PacUtils.cloneGrid(grid)));
         }
