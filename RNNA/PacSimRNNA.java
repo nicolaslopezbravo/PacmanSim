@@ -17,7 +17,7 @@ class Node
 {
     private int size;
     public ArrayList<Point> path = new ArrayList<Point>();
-    public ArrayList<Point> grid;
+    public List<Point> grid;
     public int cost = 0;
 
     Node(Point position, int c, PacCell[][] grid)
@@ -85,7 +85,7 @@ class Node
         }
     }
 
-    public ArrayList<Point> getGrid()
+    public List<Point> getGrid()
     {
         return this.grid;
     }  
@@ -132,7 +132,7 @@ public class PacSimRNNA implements PacAction
         return (int)(Math.abs(x1-x2) + Math.abs(y1 - y2));
     }
 
-    private ArrayList<Point> nearFood(Point p, ArrayList<Point> arr)
+    private ArrayList<Point> nearFood(Point p, List<Point> arr)
     {
         ArrayList<Point> food = new ArrayList<Point>();
         int size = arr.size();
@@ -178,7 +178,7 @@ public class PacSimRNNA implements PacAction
         for(int i = 0; i < numFood; i++)
         {
             Node n = costTable.get(i);
-            ArrayList<Point> gr = n.getGrid();
+            List<Point> gr = n.getGrid();
             while(gr.size() > size);
             {
                 // Debugging
