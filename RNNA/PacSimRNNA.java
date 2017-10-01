@@ -132,19 +132,19 @@ public class PacSimRNNA implements PacAction
         return (int)(Math.abs(x1-x2) + Math.abs(y1 - y2));
     }
 
-    private Point nearFood(Point p, ArrayList<Point> arr)
+    private ArrayList<Point> nearFood(Point p, ArrayList<Point> arr)
     {
-        Point food;
+        ArrayList<Point> food = new ArrayList<Point>();
         int size = arr.size();
         Point newLoc = arr.get(0);
         int cost = mannyDistance(p, newLoc);
         for(int i = 1; i < size; i++)
         {
             int newCost = mannyDistance(arr.get(i),p);
-            if(newCost < cost){
+            if(newCost <= cost){
                 cost = newCost;
-                food = arr.get(i);
-            }   
+                food.add(arr.get(i));
+            } 
         }
         return food;
     }
@@ -185,13 +185,21 @@ public class PacSimRNNA implements PacAction
                 System.out.println("Number of food remaining " + gr.size());
                 Point loc = n.getLocation();
                 // Transform gr to PacCell[][]
-                Point newLoc = nearFood(loc,gr);
-                // Prevent thrashing
-                n.getGrid().remove(newLoc);
-                // test to find multiple foods at same distance if so, clone and add to cost table, also increase size by 1
-                int newCost = PacUtils.manhattanDistance(loc,newLoc);
-                n.setCost(newCost);
-                n.addLocation(newLoc);
+                ArrayList<Point> f = nearFood(loc,gr);
+                if(f.size() > 1)
+                {
+                    // create new nodes
+                }
+                else
+                {
+                    Point newLoc = f.get(0);
+                    // Prevent thrashing
+                    n.getGrid().remove(newLoc);
+                    // test to find multiple foods at same distance if so, clone and add to cost table, also increase size by 1
+                    int newCost = PacUtils.manhattanDistance(loc,newLoc);
+                    n.setCost(newCost);
+                    n.addLocation(newLoc);
+                }
             }
         }
      }
