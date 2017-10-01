@@ -129,7 +129,24 @@ public class PacSimRNNA implements PacAction
         double x2 = q.getX();
         double y2 = q.getY();
 
-        return Math.abs(x1-x2) + Math.abs(y1 - y2);
+        return (int)(Math.abs(x1-x2) + Math.abs(y1 - y2));
+    }
+
+    private Point nearFood(Point p, ArrayList<Point> arr)
+    {
+        Point food;
+        int size = arr.size();
+        Point newLoc = arr.get(0);
+        int cost = mannyDistance(p, newLoc);
+        for(int i = 1; i < size; i++)
+        {
+            int newCost = mannyDistance(arr.get(i),p);
+            if(newCost < cost){
+                cost = newCost;
+                food = arr.get(i);
+            }   
+        }
+        return food;
     }
 
      public void PacPlanner(PacCell [][] grid, PacmanCell pc)
@@ -165,17 +182,16 @@ public class PacSimRNNA implements PacAction
             while(gr.size() > size);
             {
                 // Debugging
-                System.out.println("Number of food remaining " + PacUtils.numFood(gr));
+                System.out.println("Number of food remaining " + gr.size());
                 Point loc = n.getLocation();
                 // Transform gr to PacCell[][]
-                Point newLoc = PacUtils.nearestFood(loc,gr);
+                Point newLoc = nearFood(loc,gr);
                 // Prevent thrashing
-                gr.remove(newLoc);
+                n.getGrid().remove(newLoc);
                 // test to find multiple foods at same distance if so, clone and add to cost table, also increase size by 1
                 int newCost = PacUtils.manhattanDistance(loc,newLoc);
                 n.setCost(newCost);
                 n.addLocation(newLoc);
-                n.setGrid(gr);
             }
         }
      }
