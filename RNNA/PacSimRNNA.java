@@ -1,7 +1,5 @@
 import java.awt.Point;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import pacsim.*;
 
 /*
@@ -29,10 +27,12 @@ class Node
         size = 1;
     }
 
-    Node(ArrayList<Point> path, int cost)
+    Node(ArrayList<Point> path, int cost, List<Point>grid)
     {
         this.path = path;
         this.cost = cost;
+        this.grid = grid;
+        size = 1;
     }
 
     public void addLocation(Point position)
@@ -93,7 +93,7 @@ class Node
     @Override
     public Node clone()
     {
-        return new Node(path,cost);
+        return new Node(path,cost,grid);
     }      
 }
 
@@ -102,6 +102,7 @@ public class PacSimRNNA implements PacAction
     private List<Point> path;
     private int simTime;
     private static boolean plan = true;
+    int index = 0;
 
     public PacSimRNNA(String fname)
     {
@@ -138,18 +139,23 @@ public class PacSimRNNA implements PacAction
         int size = arr.size();
         Point newLoc = arr.get(0);
         int cost = mannyDistance(p, newLoc);
+        boolean flag = true;
         for(int i = 1; i < size; i++)
         {
             int newCost = mannyDistance(arr.get(i),p);
             if(newCost <= cost){
                 cost = newCost;
-                food.add(arr.get(i));
+                Point x = arr.get(i);
+                food.add(x);
+                flag = false;
+            }if(flag){
+                food.add(arr.get(0));
             } 
         }
         return food;
     }
 
-     public void PacPlanner(PacCell [][] grid, PacmanCell pc)
+     public List<Point> PacPlanner(PacCell [][] grid, PacmanCell pc)
      {
         List<Point> food = PacUtils.findFood(grid);
             
@@ -157,13 +163,13 @@ public class PacSimRNNA implements PacAction
         // value of the cost table. The cost table will hold only one row, continuously updating the value of each node
         // holding the total cost and the path taken as values.
 
-        int numFood = PacUtils.numFood(grid);
+        int size = PacUtils.numFood(grid);
 
-        ArrayList<Node> costTable = new ArrayList<Node>(numFood);
+        ArrayList<Node> costTable = new ArrayList<Node>(size);
 
         // Initialize the cost table
         Point pacman = pc.getLoc();
-        for(int row = 0; row < numFood; row++)
+        for(int row = 0; row < size; row++)
         {
             // Calculate the new postion of the possible path
             Point position = food.get(row);
@@ -174,34 +180,69 @@ public class PacSimRNNA implements PacAction
             // Add the new cost and postion of the possible path to the list of options
             costTable.add(new Node(position, cost, PacUtils.cloneGrid(grid)));
         }
-        int size = numFood;
-        for(int i = 0; i < numFood; i++)
+
+        for(int i = 0; i < size; i++)
         {
             Node n = costTable.get(i);
             List<Point> gr = n.getGrid();
-            while(gr.size() > size);
+
+            while(gr.size() > 0)
             {
                 // Debugging
-                System.out.println("Number of food remaining " + gr.size());
+               // System.out.println("Number of food remaining " + gr.size());
                 Point loc = n.getLocation();
-                // Transform gr to PacCell[][]
+                
                 ArrayList<Point> f = nearFood(loc,gr);
+
                 if(f.size() > 1)
                 {
                     // create new nodes
-                }
-                else
+                    for(int z = 1; z < f.size(); z++)
+                    {
+                        Point newLoc = f.get(z);
+                        Node temp = n.clone();
+                        // Prevent thrashing
+                        temp.getGrid().remove(newLoc);
+                        // Calculate the new cost with the manhattan distance
+                        int newCost = PacUtils.manhattanDistance(loc,newLoc);
+                        temp.setCost(newCost);
+                        temp.addLocation(newLoc);
+                        costTable.add(temp);
+                        size++;
+                    }    
+                }else if(f.size() == 1)
                 {
                     Point newLoc = f.get(0);
                     // Prevent thrashing
                     n.getGrid().remove(newLoc);
-                    // test to find multiple foods at same distance if so, clone and add to cost table, also increase size by 1
+                    // Calculate the new cost with the manhattan distance
                     int newCost = PacUtils.manhattanDistance(loc,newLoc);
                     n.setCost(newCost);
                     n.addLocation(newLoc);
+                }else
+                {
+                    break;
                 }
+                
             }
         }
+        int cost = costTable.get(0).getCost();
+        ArrayList<Point> optimalPath = new ArrayList<Point>();
+        for(int i = 1; i < costTable.size(); i++)
+        {
+            if(costTable.get(i).getCost() < cost)
+            {
+                cost = costTable.get(i).getCost();
+                optimalPath = costTable.get(i).getPath();
+            }
+        }
+        List<Point> op = new ArrayList<Point>();
+        for(Point p : optimalPath)
+        {
+            op.add(p);
+        }
+        //System.out.println("ANSWER IS :" + op.toString());
+        return op;
      }
 
      @Override
@@ -216,27 +257,18 @@ public class PacSimRNNA implements PacAction
         
         if(plan)
         {
-            PacPlanner(grid, pc);
+            path = PacPlanner(grid, pc);
             plan = false;
-        }
-
-        // if current path completed (or just starting out),
-        // select a the nearest food using the city-block 
-        // measure and generate a path to that target
-        if(path.isEmpty()) 
-        {
-            Point tgt = PacUtils.nearestFood(pc.getLoc(), grid);
-
-            path = BFSPath.getPath(grid, pc.getLoc(), tgt);
-
-           
+            
+            Point tgt = path.get(0);
+            
             System.out.println("Pac-Man currently at: [ " + pc.getLoc().x
-                 + ", " + pc.getLoc().y + " ]");
-
+                    + ", " + pc.getLoc().y + " ]");
+    
             System.out.println("Setting new target  : [ " + tgt.x
-                 + ", " + tgt.y + " ]");
+                    + ", " + tgt.y + " ]");
         }
-        
+
         // take the next step on the current path
         
         Point next = path.remove(0);
