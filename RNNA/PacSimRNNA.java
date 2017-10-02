@@ -102,7 +102,7 @@ public class PacSimRNNA implements PacAction
     private List<Point> path;
     private int simTime;
     private static boolean plan = true;
-    int index = 0;
+    public static List<Point> targets;
 
     public PacSimRNNA(String fname)
     {
@@ -257,27 +257,28 @@ public class PacSimRNNA implements PacAction
         
         if(plan)
         {
-            path = PacPlanner(grid, pc);
+            targets = PacPlanner(grid, pc);
             plan = false;
-            
-            Point tgt = path.get(0);
-            
-            System.out.println("Pac-Man currently at: [ " + pc.getLoc().x
-                    + ", " + pc.getLoc().y + " ]");
-    
-            System.out.println("Setting new target  : [ " + tgt.x
-                    + ", " + tgt.y + " ]");
         }
 
-        // take the next step on the current path
-        
-        Point next = path.remove(0);
-
-        PacFace face = PacUtils.direction(pc.getLoc(), next);
-
-        System.out.printf("%5d : From [%2d, %2d] go %s%n", 
-              ++simTime, pc.getLoc().x, pc.getLoc().y, face);
-
-        return face;
+        if( path.isEmpty() ) 
+        {
+            Point tgt = targets.remove(0);
+            path = BFSPath.getPath(grid, pc.getLoc(), tgt);
+            
+            System.out.println("Pac-Man currently at: [ " + pc.getLoc().x
+                  + ", " + pc.getLoc().y + " ]");
+            System.out.println("Setting new target  : [ " + tgt.x
+                  + ", " + tgt.y + " ]");
+         }
+         
+         // take the next step on the current path
+         
+         Point next = path.remove( 0 );
+         PacFace face = PacUtils.direction( pc.getLoc(), next );
+         System.out.printf( "%5d : From [ %2d, %2d ] go %s%n", 
+               ++simTime, pc.getLoc().x, pc.getLoc().y, face );
+               
+         return face;
      }
 }
