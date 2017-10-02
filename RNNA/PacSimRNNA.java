@@ -23,6 +23,7 @@ class Node
         // add initial starting point and cost to get there
         path.add(position);
         this.grid = PacUtils.findFood(grid);
+        this.grid.remove(position);
         setCost(c);
         size = 1;
     }
@@ -39,6 +40,7 @@ class Node
     {
         // add another position
         path.add(position);
+        grid.remove(position);
         size++;
     }
 
@@ -75,14 +77,6 @@ class Node
             System.out.print(path.get(i) + " ");
         }
         System.out.println();
-    }
-
-    public void removePoint(Point f)
-    {
-        if(grid.contains(f))
-        {
-            grid.remove(f);
-        }
     }
 
     public List<Point> getGrid()
@@ -139,29 +133,24 @@ public class PacSimRNNA implements PacAction
         int size = arr.size();
         Point newLoc = arr.get(0);
         int cost = mannyDistance(p, newLoc);
-        boolean flag = true;
+
         for(int i = 1; i < size; i++)
         {
             int newCost = mannyDistance(arr.get(i),p);
-            if(newCost <= cost){
+            if(newCost <= cost)
+            {
                 cost = newCost;
                 Point x = arr.get(i);
                 food.add(x);
-                flag = false;
-            }if(flag){
-                food.add(arr.get(0));
-            } 
+            }
         }
+
         return food;
     }
 
      public List<Point> PacPlanner(PacCell [][] grid, PacmanCell pc)
      {
         List<Point> food = PacUtils.findFood(grid);
-            
-        // The cost of pacman to getting to the food (initial start state) will be determined and set as the initial
-        // value of the cost table. The cost table will hold only one row, continuously updating the value of each node
-        // holding the total cost and the path taken as values.
 
         int size = PacUtils.numFood(grid);
 
@@ -173,59 +162,46 @@ public class PacSimRNNA implements PacAction
         {
             // Calculate the new postion of the possible path
             Point position = food.get(row);
-
             // Calculate the cost to the each initial food
-            int cost = PacUtils.manhattanDistance(pacman, position);
-            
+            int cost = PacUtils.manhattanDistance(pacman, position);            
             // Add the new cost and postion of the possible path to the list of options
             costTable.add(new Node(position, cost, PacUtils.cloneGrid(grid)));
         }
-
+        
         for(int i = 0; i < size; i++)
         {
             Node n = costTable.get(i);
-            List<Point> gr = n.getGrid();
 
-            while(gr.size() > 0)
+            while(n.getGrid().size() > 0)
             {
-                // Debugging
-               // System.out.println("Number of food remaining " + gr.size());
-                Point loc = n.getLocation();
-                
-                ArrayList<Point> f = nearFood(loc,gr);
+                Point loc = n.getLocation();                
+                ArrayList<Point> f = nearFood(loc,n.getGrid());
 
-                if(f.size() > 1)
+                System.out.println("GRID SIZE FOR N IS " + n.getGrid().size());
+                System.out.println("GRID PRINTING");
+                System.out.println(n.getGrid().toString());
+                
+                //  if two or more options, create new nodes for them
+                for(int j = 1; j < f.size(); j++)
                 {
-                    // create new nodes
-                    for(int z = 1; z < f.size(); z++)
-                    {
-                        Point newLoc = f.get(z);
-                        Node temp = n.clone();
-                        // Prevent thrashing
-                        temp.getGrid().remove(newLoc);
-                        // Calculate the new cost with the manhattan distance
-                        int newCost = PacUtils.manhattanDistance(loc,newLoc);
-                        temp.setCost(newCost);
-                        temp.addLocation(newLoc);
-                        costTable.add(temp);
-                        size++;
-                    }    
-                }else if(f.size() == 1)
-                {
-                    Point newLoc = f.get(0);
-                    // Prevent thrashing
-                    n.getGrid().remove(newLoc);
+                    Point newLoc = f.remove(j);
+                    Node temp = n.clone();
                     // Calculate the new cost with the manhattan distance
                     int newCost = PacUtils.manhattanDistance(loc,newLoc);
-                    n.setCost(newCost);
-                    n.addLocation(newLoc);
-                }else
-                {
-                    break;
-                }
+                    temp.setCost(newCost);
+                    temp.addLocation(newLoc);
+                    costTable.add(temp);
+                    size++;
+                } 
                 
+                Point newLoc = f.remove(0);
+                // Calculate the new cost with the manhattan distance
+                int newCost = PacUtils.manhattanDistance(loc,newLoc);
+                n.setCost(newCost);
+                n.addLocation(newLoc);                               
             }
         }
+
         int cost = costTable.get(0).getCost();
         ArrayList<Point> optimalPath = new ArrayList<Point>();
         for(int i = 1; i < costTable.size(); i++)
@@ -236,12 +212,13 @@ public class PacSimRNNA implements PacAction
                 optimalPath = costTable.get(i).getPath();
             }
         }
+
         List<Point> op = new ArrayList<Point>();
         for(Point p : optimalPath)
         {
             op.add(p);
         }
-        //System.out.println("ANSWER IS :" + op.toString());
+        
         return op;
      }
 
@@ -278,7 +255,9 @@ public class PacSimRNNA implements PacAction
          PacFace face = PacUtils.direction( pc.getLoc(), next );
          System.out.printf( "%5d : From [ %2d, %2d ] go %s%n", 
                ++simTime, pc.getLoc().x, pc.getLoc().y, face );
-               
+
+        // If pacman eats them by accident, we must dequeue them
+
          return face;
      }
 }
