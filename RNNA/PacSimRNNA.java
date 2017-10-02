@@ -82,13 +82,7 @@ class Node
     public List<Point> getGrid()
     {
         return this.grid;
-    }  
-
-    @Override
-    public Node clone()
-    {
-        return new Node(path,cost,grid);
-    }      
+    }     
 }
 
 public class PacSimRNNA implements PacAction
@@ -117,35 +111,37 @@ public class PacSimRNNA implements PacAction
         path = new ArrayList();
     }
 
-    private int mannyDistance(Point p, Point q)
-    {
-        double x1 = p.getX();
-        double y1 = p.getY();
-        double x2 = q.getX();
-        double y2 = q.getY();
-
-        return (int)(Math.abs(x1-x2) + Math.abs(y1 - y2));
-    }
-
     private ArrayList<Point> nearFood(Point p, List<Point> arr)
     {
-        ArrayList<Point> food = new ArrayList<Point>();
+        ArrayList<Point> equidistantPellets = new ArrayList<Point>();
         int size = arr.size();
         Point newLoc = arr.get(0);
-        int cost = mannyDistance(p, newLoc);
+        int cost = PacUtils.manhattanDistance(p, newLoc);
 
         for(int i = 1; i < size; i++)
         {
-            int newCost = mannyDistance(arr.get(i),p);
+            int newCost = PacUtils.manhattanDistance(p, arr.get(i));
+            System.out.println("New cost is: " + newCost + " Regular cost: " + cost);
             if(newCost <= cost)
             {
                 cost = newCost;
                 Point x = arr.get(i);
-                food.add(x);
+                equidistantPellets.add(x);
+                System.out.println("Cost of added pellet: " + cost);
             }
         }
+        System.out.println("SIZE OF ARRAY " + arr.size() + " ARRAY: " +arr.toString());
+        
+        if(size <= 2)
+        {
+            for(int i = 0; i < size; i++)
+            {   
+                equidistantPellets.add(arr.get(i));
+            }
+        }
+        
 
-        return food;
+        return equidistantPellets;
     }
 
      public List<Point> PacPlanner(PacCell [][] grid, PacmanCell pc)
@@ -174,18 +170,18 @@ public class PacSimRNNA implements PacAction
 
             while(n.getGrid().size() > 0)
             {
-                Point loc = n.getLocation();                
-                ArrayList<Point> f = nearFood(loc,n.getGrid());
-
-                System.out.println("GRID SIZE FOR N IS " + n.getGrid().size());
-                System.out.println("GRID PRINTING");
-                System.out.println(n.getGrid().toString());
+                Point loc = n.getLocation();        
+                // the bug is in here    
+                System.out.println("GRID SIZE: " + n.getGrid().size());    
+                ArrayList<Point> equidistantPellets = nearFood(loc, n.getGrid());
+                System.out.println();
+                
                 
                 //  if two or more options, create new nodes for them
-                for(int j = 1; j < f.size(); j++)
+                for(int j = 1; j < equidistantPellets.size(); j++)
                 {
-                    Point newLoc = f.remove(j);
-                    Node temp = n.clone();
+                    Point newLoc = equidistantPellets.remove(j);
+                    Node temp = new Node (n.getPath(),n.getCost(),n.getGrid());
                     // Calculate the new cost with the manhattan distance
                     int newCost = PacUtils.manhattanDistance(loc,newLoc);
                     temp.setCost(newCost);
@@ -194,11 +190,11 @@ public class PacSimRNNA implements PacAction
                     size++;
                 } 
                 
-                Point newLoc = f.remove(0);
+                Point newLoc = equidistantPellets.remove(0);
                 // Calculate the new cost with the manhattan distance
                 int newCost = PacUtils.manhattanDistance(loc,newLoc);
                 n.setCost(newCost);
-                n.addLocation(newLoc);                               
+                n.addLocation(newLoc);                          
             }
         }
 
