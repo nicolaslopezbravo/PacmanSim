@@ -14,13 +14,14 @@ Nicolas Lopez
 class Node
 {
     public int size;
-    public ArrayList<Point> path = new ArrayList<Point>();
+    public ArrayList<Point> path;
     public List<Point> grid;
     public int cost = 0;
 
     Node(Point position, int c, PacCell[][] grid)
     {
         // add initial starting point and cost to get there
+        path = new ArrayList<Point>();
         path.add(position);
         this.grid = PacUtils.findFood(grid);
         this.grid.remove(position);
@@ -160,9 +161,27 @@ public class PacSimRNNA implements PacAction
         System.out.println();
     }
 
-    private static void printPopulation(int i)
+    private static void printPopulation(ArrayList<Node> arr)
     {
-        System.out.println("Population at step: " + i);
+        for(int i = 0; i < 10; i++)
+        {
+            Node n = arr.get(i);
+            ArrayList<Point> p = n.getPath();
+            System.out.print(i + " : " + " cost=" + n.getCost());
+            boolean flag = true;
+            for(Point z : p)
+            {
+                int x = (int)z.getX();
+                int y = (int)z.getY();
+                if(flag)
+                {
+                    System.out.print("               [(" + x + "," + y +") ," + "c" + "] ");
+                    flag = false;
+                }
+                System.out.print("[(" + x + "," + y  +") ," + "c" +"] ");
+            }
+            System.out.println();            
+        }
     }
 
     private void printTime(int a)
@@ -226,18 +245,14 @@ public class PacSimRNNA implements PacAction
         for(int i = 0; i < size; i++)
         {
             Node n = costTable.get(i);
-            printPopulation(i + 1);
+            System.out.println("Population at step: " + i);
             int numNodes = 0;
             while(n.getGrid().size() > 0)
             {
                 Point loc = n.getLocation();  
                 ArrayList<Point> nearestPellets = nearFood(loc, n.getGrid());
-                //  if two or more options, create new nodes for them
 
-                // Print whats in the node
-                System.out.println( numNodes + " : " + " cost=" + n.getCost() +" : " + 
-                " [(" + "," + ") ," + "]");
-                numNodes++;
+                printPopulation(costTable);
 
                 for(int j = 1; j < nearestPellets.size(); j++)
                 {
@@ -245,16 +260,24 @@ public class PacSimRNNA implements PacAction
 
                     // Copy grid and path elements to new instances
                     List<Point> newGrid = new ArrayList<Point>();
-                    Collections.copy(n.getGrid(), newGrid);
                     ArrayList<Point> newPath = new ArrayList<Point>();
-                    Collections.copy(n.getPath(), newPath);
 
+                    for(Point k: n.getGrid())
+                    {
+                        newGrid.add(k);
+                    }
+                    for(Point k: n.getPath())
+                    {
+                        newPath.add(k);
+                    }
+                    
                     Node temp = new Node (newPath, n.getCost(), newGrid);
 
                     // Calculate the new cost with the manhattan distance
                     int newCost = PacUtils.manhattanDistance(loc, newLoc);
                     temp.setCost(newCost);
                     temp.addLocation(newLoc);
+                    temp.print();
                     costTable.add(temp);
                 }
                 Point newLoc = nearestPellets.remove(0);
