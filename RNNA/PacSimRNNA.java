@@ -113,7 +113,7 @@ public class PacSimRNNA implements PacAction
 
     private ArrayList<Point> nearFood(Point p, List<Point> arr)
     {
-        ArrayList<Point> equidistantPellets = new ArrayList<Point>();
+        ArrayList<Point> nearestPellets = new ArrayList<Point>();
         int size = arr.size();
         Point newLoc = arr.get(0);
         int cost = PacUtils.manhattanDistance(p, newLoc);
@@ -121,27 +121,19 @@ public class PacSimRNNA implements PacAction
         for(int i = 1; i < size; i++)
         {
             int newCost = PacUtils.manhattanDistance(p, arr.get(i));
-            System.out.println("New cost is: " + newCost + " Regular cost: " + cost);
             if(newCost <= cost)
             {
                 cost = newCost;
                 Point x = arr.get(i);
-                equidistantPellets.add(x);
-                System.out.println("Cost of added pellet: " + cost);
+                nearestPellets.add(x);
             }
-        }
-        System.out.println("SIZE OF ARRAY " + arr.size() + " ARRAY: " +arr.toString());
-        
-        if(size <= 2)
+        }        
+        if(nearestPellets.isEmpty())
         {
-            for(int i = 0; i < size; i++)
-            {   
-                equidistantPellets.add(arr.get(i));
-            }
+            for(Point m : arr)
+                nearestPellets.add(m);
         }
-        
-
-        return equidistantPellets;
+        return nearestPellets;
     }
 
      public List<Point> PacPlanner(PacCell [][] grid, PacmanCell pc)
@@ -170,17 +162,12 @@ public class PacSimRNNA implements PacAction
 
             while(n.getGrid().size() > 0)
             {
-                Point loc = n.getLocation();        
-                // the bug is in here    
-                System.out.println("GRID SIZE: " + n.getGrid().size());    
-                ArrayList<Point> equidistantPellets = nearFood(loc, n.getGrid());
-                System.out.println();
-                
-                
+                Point loc = n.getLocation();  
+                ArrayList<Point> nearestPellets = nearFood(loc, n.getGrid());
                 //  if two or more options, create new nodes for them
-                for(int j = 1; j < equidistantPellets.size(); j++)
+                for(int j = 1; j < nearestPellets.size(); j++)
                 {
-                    Point newLoc = equidistantPellets.remove(j);
+                    Point newLoc = nearestPellets.remove(j);
                     Node temp = new Node (n.getPath(),n.getCost(),n.getGrid());
                     // Calculate the new cost with the manhattan distance
                     int newCost = PacUtils.manhattanDistance(loc,newLoc);
@@ -188,13 +175,12 @@ public class PacSimRNNA implements PacAction
                     temp.addLocation(newLoc);
                     costTable.add(temp);
                     size++;
-                } 
-                
-                Point newLoc = equidistantPellets.remove(0);
+                }
+                Point newLoc = nearestPellets.remove(0);
                 // Calculate the new cost with the manhattan distance
                 int newCost = PacUtils.manhattanDistance(loc,newLoc);
                 n.setCost(newCost);
-                n.addLocation(newLoc);                          
+                n.addLocation(newLoc);                                        
             }
         }
 
@@ -210,6 +196,7 @@ public class PacSimRNNA implements PacAction
         }
 
         List<Point> op = new ArrayList<Point>();
+        int optSize = optimalPath.size();
         for(Point p : optimalPath)
         {
             op.add(p);
