@@ -101,6 +101,9 @@ public class PacSimRNNA implements PacAction
     public static void main(String [] args)
     {
         new PacSimRNNA(args[0]);
+        
+        System.out.println("\nTSP using Repetitive Nearest Neighbor Algorithm " +
+        "by Nicolas Lopez and Alexandra Aguirre:");
         System.out.println("\nMaze : " + args[0] + "\n");
     }
 
@@ -109,6 +112,23 @@ public class PacSimRNNA implements PacAction
     {
         simTime = 0;
         path = new ArrayList();
+    }
+
+    public void printFood(List<Point> food)
+    {
+        System.out.println("Food Array:\n");
+
+        int len = food.size();
+        
+        for(int i = 0; i < len; i++)
+        {
+            // update the X and Y coordiantes for each new food pellet
+            int x = (int)(food.get(i)).getX();
+            int y = (int)(food.get(i)).getY();
+
+            System.out.println(i + " : (" + x + "," + y + ")");
+        }
+        System.out.println();
     }
 
     private ArrayList<Point> nearFood(Point p, List<Point> arr)
@@ -138,7 +158,7 @@ public class PacSimRNNA implements PacAction
      public List<Point> PacPlanner(PacCell [][] grid, PacmanCell pc)
      {
         List<Point> food = PacUtils.findFood(grid);
-
+        printFood(food);
         int size = PacUtils.numFood(grid);
 
         ArrayList<Node> costTable = new ArrayList<Node>(size);
