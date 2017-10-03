@@ -13,7 +13,7 @@ Nicolas Lopez
 */
 class Node
 {
-    private int size;
+    public int size;
     public ArrayList<Point> path = new ArrayList<Point>();
     public List<Point> grid;
     public int cost = 0;
@@ -70,7 +70,7 @@ class Node
 
     public void print()
     {
-        for(int i = 0; i < size; i++)
+        for(int i = 0; i < size-1; i++)
         {
             System.out.print(path.get(i) + " ");
         }
@@ -134,15 +134,29 @@ public class PacSimRNNA implements PacAction
         System.out.println("TSP using Repetitive Nearest Neighbor Algorithm by Alexandra Aguirre & Nicolas Lopez");
     }
 
-    private static void printCostTable(ArrayList<Node> costTable)
-    {   /*
-        for(int i = 0; i < costTable.size(); i++)
-        {
-            Node n = costTable.get(i);
-            n.print();
-        }   */
+    private static void printCostTable(List<Point> food, Point pc, PacCell[][] grid)
+    {   
         System.out.println("Cost Table: ");
         System.out.println();
+        System.out.println();
+
+        int[][] arr = new int[food.size() + 1][food.size()+ 1];
+        for(int i = 1; i < arr.length; i++)
+        {
+            Point p = food.get(i - 1);
+            arr[i][0] = PacUtils.manhattanDistance(pc,p);
+            arr[0][i] = PacUtils.manhattanDistance(pc,p);
+        }
+
+        for(int i = 0; i < arr.length; i++)
+        {
+            for(int j = 0; j < arr.length; j++)
+            {
+                System.out.print(grid[i][j].toString() + " ");
+            }
+            System.out.println();
+        }
+
         System.out.println();
     }
 
@@ -151,9 +165,9 @@ public class PacSimRNNA implements PacAction
         System.out.println("Population at step: " + i);
     }
 
-    private void printTime()
+    private void printTime(int a)
     {
-        System.out.println("Time to generate plan: " + simTime +" msec");
+        System.out.println("Time to generate plan: " + a +" msec");
         System.out.println();
         System.out.println();
     }
@@ -189,11 +203,15 @@ public class PacSimRNNA implements PacAction
         List<Point> food = PacUtils.findFood(grid);
 
         int size = PacUtils.numFood(grid);
+         
+        Point pacman = pc.getLoc();
+
+        //printCostTable(food, pacman, grid);
+        printFoodArray(food);
 
         ArrayList<Node> costTable = new ArrayList<Node>(size);
 
         // Initialize the cost table
-        Point pacman = pc.getLoc();
         for(int row = 0; row < size; row++)
         {
             // Calculate the new postion of the possible path
@@ -208,12 +226,19 @@ public class PacSimRNNA implements PacAction
         for(int i = 0; i < size; i++)
         {
             Node n = costTable.get(i);
-
+            printPopulation(i + 1);
+            int numNodes = 0;
             while(n.getGrid().size() > 0)
             {
                 Point loc = n.getLocation();  
                 ArrayList<Point> nearestPellets = nearFood(loc, n.getGrid());
                 //  if two or more options, create new nodes for them
+
+                // Print whats in the node
+                System.out.println( numNodes + " : " + " cost=" + n.getCost() +" : " + 
+                " [(" + "," + ") ," + "]");
+                numNodes++;
+
                 for(int j = 1; j < nearestPellets.size(); j++)
                 {
                     Point newLoc = nearestPellets.remove(j);
@@ -231,7 +256,6 @@ public class PacSimRNNA implements PacAction
                     temp.setCost(newCost);
                     temp.addLocation(newLoc);
                     costTable.add(temp);
-                    size++;
                 }
                 Point newLoc = nearestPellets.remove(0);
                 // Calculate the new cost with the manhattan distance
@@ -239,18 +263,18 @@ public class PacSimRNNA implements PacAction
                 n.setCost(newCost);
                 n.addLocation(newLoc);                                     
             }
+            
+            System.out.println();
         }
 
-        printCostTable(costTable);
-        printFoodArray(food);        
-        printPopulation(0);
         System.out.println();
         System.out.println();
 
         // Find lowest cost
+
         int cost = costTable.get(0).getCost();
         List<Point> optimalPath = costTable.get(0).getPath();
-        for(int i = 1; i < costTable.size(); i++)
+        for(int i = 1; i < food.size(); i++)
         {
             if(costTable.get(i).getCost() < cost)
             {
@@ -273,9 +297,11 @@ public class PacSimRNNA implements PacAction
         
         if(plan)
         {
+            long before = System.currentTimeMillis();
             targets = PacPlanner(grid, pc);
+            long after = System.currentTimeMillis();
             plan = false;
-            printTime();
+            printTime((int)(after - before));
             System.out.println("Solution moves: ");
             System.out.println();
             System.out.println();
