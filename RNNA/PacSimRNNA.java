@@ -114,17 +114,16 @@ public class PacSimRNNA implements PacAction
     private ArrayList<Point> nearFood(Point p, List<Point> arr)
     {
         ArrayList<Point> nearestPellets = new ArrayList<Point>();
-        int size = arr.size();
         Point newLoc = arr.get(0);
         int cost = PacUtils.manhattanDistance(p, newLoc);
 
-        for(int i = 1; i < size; i++)
+        for(int i = 1; i < arr.size(); i++)
         {
             int newCost = PacUtils.manhattanDistance(p, arr.get(i));
             if(newCost <= cost)
             {
                 cost = newCost;
-                Point x = arr.get(i);
+                Point x = arr.remove(i);
                 nearestPellets.add(x);
             }
         }        
@@ -168,9 +167,9 @@ public class PacSimRNNA implements PacAction
                 for(int j = 1; j < nearestPellets.size(); j++)
                 {
                     Point newLoc = nearestPellets.remove(j);
-                    Node temp = new Node (n.getPath(),n.getCost(),n.getGrid());
+                    Node temp = new Node (n.getPath(), n.getCost(), n.getGrid());
                     // Calculate the new cost with the manhattan distance
-                    int newCost = PacUtils.manhattanDistance(loc,newLoc);
+                    int newCost = PacUtils.manhattanDistance(loc, newLoc);
                     temp.setCost(newCost);
                     temp.addLocation(newLoc);
                     costTable.add(temp);
@@ -178,14 +177,14 @@ public class PacSimRNNA implements PacAction
                 }
                 Point newLoc = nearestPellets.remove(0);
                 // Calculate the new cost with the manhattan distance
-                int newCost = PacUtils.manhattanDistance(loc,newLoc);
+                int newCost = PacUtils.manhattanDistance(loc, newLoc);
                 n.setCost(newCost);
-                n.addLocation(newLoc);                                        
+                n.addLocation(newLoc);                                     
             }
         }
         // Find lowest cost
         int cost = costTable.get(0).getCost();
-        List<Point> optimalPath = new ArrayList<Point>();
+        List<Point> optimalPath = costTable.get(0).getPath();
         for(int i = 1; i < costTable.size(); i++)
         {
             if(costTable.get(i).getCost() < cost)
