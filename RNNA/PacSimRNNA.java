@@ -155,7 +155,7 @@ public class PacSimRNNA implements PacAction
             // Add the new cost and postion of the possible path to the list of options
             costTable.add(new Node(position, cost, PacUtils.cloneGrid(grid)));
         }
-        
+        // Fill out cost table
         for(int i = 0; i < size; i++)
         {
             Node n = costTable.get(i);
@@ -183,9 +183,9 @@ public class PacSimRNNA implements PacAction
                 n.addLocation(newLoc);                                        
             }
         }
-
+        // Find lowest cost
         int cost = costTable.get(0).getCost();
-        ArrayList<Point> optimalPath = new ArrayList<Point>();
+        List<Point> optimalPath = new ArrayList<Point>();
         for(int i = 1; i < costTable.size(); i++)
         {
             if(costTable.get(i).getCost() < cost)
@@ -194,15 +194,7 @@ public class PacSimRNNA implements PacAction
                 optimalPath = costTable.get(i).getPath();
             }
         }
-
-        List<Point> op = new ArrayList<Point>();
-        int optSize = optimalPath.size();
-        for(Point p : optimalPath)
-        {
-            op.add(p);
-        }
-        
-        return op;
+        return optimalPath;
      }
 
      @Override
