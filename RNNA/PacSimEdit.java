@@ -15,16 +15,17 @@ class Node
 {
     public int size;
     public ArrayList<Point> path;
-    public List<Point> grid;
+    public List<Point> notEaten;
     public int cost = 0;
 
     Node(Point position, int c, PacCell[][] grid)
     {
         // add initial starting point and cost to get there
         path = new ArrayList<Point>();
+        notEaten = new ArrayList<Point>();
         path.add(position);
-        this.grid = PacUtils.findFood(grid);
-        this.grid.remove(position);
+        notEaten = PacUtils.findFood(grid);
+        notEaten.remove(position);
         setCost(c);
         size = 1;
     }
@@ -32,16 +33,16 @@ class Node
     Node(ArrayList<Point> path, int cost, List<Point>grid)
     {
         this.path = path;
+        notEaten = grid;
         this.cost = cost;
-        this.grid = grid;
-        size = 1;
+        size = path.size();
     }
 
-    public void addLocation(Point position)
+    public void addLocation(Point loc)
     {
         // add another position & remove it from the grid
-        path.add(position);
-        grid.remove(position);
+        path.add(loc);
+        notEaten.remove(loc);
         size++;
     }
 
@@ -72,16 +73,16 @@ class Node
     public void print()
     {
         System.out.println("SIZEEE: " + size);
-        for(int i = 0; i < size-1; i++)
+        for(int i = 0; i < size; i++)
         {
             System.out.print(path.get(i) + " ");
         }
         System.out.println();
     }
 
-    public List<Point> getGrid()
+    public List<Point> getLeftOvers()
     {
-        return this.grid;
+        return this.notEaten;
     }     
 }
 
@@ -207,29 +208,6 @@ public class PacSimEdit implements PacAction
     /* *********************************************** */
     }
 
-    private static void printPopulation(ArrayList<Node> arr)
-    {
-        for(int i = 0; i < 10; i++)
-        {
-            Node n = arr.get(i);
-            ArrayList<Point> p = n.getPath();
-            System.out.print(i + " : " + " cost=" + n.getCost());
-            boolean flag = true;
-            for(Point z : p)
-            {
-                int x = (int)z.getX();
-                int y = (int)z.getY();
-                if(flag)
-                {
-                    System.out.print("               [(" + x + "," + y +") ," + "c" + "] ");
-                    flag = false;
-                }
-                System.out.print("[(" + x + "," + y  +") ," + "c" +"] ");
-            }
-            System.out.println();            
-        }
-    }
-
     private void printTime(int a)
     {
         System.out.println("Time to generate plan: " + a +" msec");
@@ -273,8 +251,8 @@ public class PacSimEdit implements PacAction
         int size = PacUtils.numFood(grid);
         Point pacman = pc.getLoc();
 
-        printCostTable(food, pacman, grid);
-        printFoodArray(food);
+        //printCostTable(food, pacman, grid);
+        //printFoodArray(food);
 
         ArrayList<Node> costTable = new ArrayList<Node>(size);
 
@@ -293,15 +271,15 @@ public class PacSimEdit implements PacAction
         }
 
         // Fill out cost table
-        for(int i = 0; i < size; i++)
+        for(int i = 0; i < costTable.size(); i++)
         {
             Node n = costTable.get(i);
-            System.out.println("Population at step: " + i);
+            //System.out.println("Population at step: " + i);
             int numNodes = 0;
-            while(n.getGrid().size() > 0)
+            while(n.getLeftOvers().size() > 0)
             {
                 Point loc = n.getLocation();  
-                ArrayList<Point> nearestPellets = nearFood(loc, grid ,n.getGrid());
+                ArrayList<Point> nearestPellets = nearFood(loc, grid ,n.getLeftOvers());
 
                // printPopulation(costTable);
 
@@ -313,7 +291,7 @@ public class PacSimEdit implements PacAction
                     List<Point> newGrid = new ArrayList<Point>();
                     ArrayList<Point> newPath = new ArrayList<Point>();
 
-                    for(Point k: n.getGrid())
+                    for(Point k: n.getLeftOvers())
                     {
                         newGrid.add(k);
                     }
@@ -341,26 +319,18 @@ public class PacSimEdit implements PacAction
                 n.addLocation(newLoc);                                     
             }
             
-            System.out.println();
+           // System.out.println();
         }
 
-        System.out.println();
-        System.out.println();
+        //System.out.println();
+        //System.out.println();
+
 
         // Find lowest cost
-
-        for(int i = 0; i < costTable.size(); i++)
-        {
-            if(costTable.get(i).size > 2)
-                costTable.get(i).print();
-        }
-
-
-
         int cost = costTable.get(0).getCost();
         List<Point> optimalPath = costTable.get(0).getPath();
         
-        for(int i = 1; i < food.size(); i++)
+        for(int i = 1; i < costTable.size(); i++)
         {
             if(costTable.get(i).getCost() < cost)
             {
