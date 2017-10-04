@@ -248,7 +248,7 @@ public class PacSimEdit implements PacAction
         Point pacman = pc.getLoc();
 
         //printCostTable(food, pacman, grid);
-        //printFoodArray(food);
+        printFoodArray(food);
 
         ArrayList<Node> costTable = new ArrayList<Node>(size);
 
@@ -263,8 +263,11 @@ public class PacSimEdit implements PacAction
             // Add the new cost and postion of the possible path to the list of options
             costTable.add(new Node(position, cost, PacUtils.cloneGrid(grid)));
         }
-        System.out.println("Filling out cost table");
-        // Fill out cost table
+        
+        // Fill out cost table & find lowest cost
+        int cost = 0;
+        List<Point> optimalPath = new ArrayList<Point>();
+
         for(int i = 0; i < costTable.size(); i++)
         {
             Node n = costTable.get(i);
@@ -296,20 +299,18 @@ public class PacSimEdit implements PacAction
                 n.setCost(newCost);
                 n.addLocation(newLoc);                                     
             }
-        }
-        System.out.println("Finding lowest");
-        // Find lowest cost
-        int cost = costTable.get(0).getCost();
-        List<Point> optimalPath = costTable.get(0).getPath();
-        
-        for(int i = 1; i < costTable.size(); i++)
-        {
-            if(costTable.get(i).getCost() < cost)
+            if(i == 0)
+            {
+                cost = n.getCost();
+                optimalPath = costTable.get(0).getPath();
+            }
+            else if(costTable.get(i).getCost() < cost)
             {
                 cost = costTable.get(i).getCost();
                 optimalPath = costTable.get(i).getPath();
             }
         }
+
         return optimalPath;
      }
 
