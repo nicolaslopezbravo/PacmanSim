@@ -16,7 +16,7 @@ class Node
     public int size;
     public ArrayList<Point> path;
     public List<Point> notEaten;
-    public int cost = 0;
+    public int cost;
 
     Node(Point position, int c, PacCell[][] grid)
     {
@@ -26,7 +26,7 @@ class Node
         path.add(position);
         notEaten = PacUtils.findFood(grid);
         notEaten.remove(position);
-        setCost(c);
+        cost = c;
         size = 1;
     }
 
@@ -72,7 +72,6 @@ class Node
 
     public void print()
     {
-        System.out.println("SIZEEE: " + size);
         for(int i = 0; i < size; i++)
         {
             System.out.print(path.get(i) + " ");
@@ -236,10 +235,7 @@ public class PacSimEdit implements PacAction
         }        
         if(nearestPellets.isEmpty())
         {   
-            for(Point m : arr)
-            {
-                nearestPellets.add(m);
-            }   
+            nearestPellets.addAll(arr); 
         }
         return nearestPellets;
     }
@@ -261,71 +257,47 @@ public class PacSimEdit implements PacAction
         {
             // Calculate the new postion of the possible path
             Point position = food.get(row);
-
             // Calculate the cost to the each initial food
             List<Point> initialCost = BFSPath.getPath(grid, pacman, position);
-            int cost = initialCost.size();   
-            
+            int cost = initialCost.size();               
             // Add the new cost and postion of the possible path to the list of options
             costTable.add(new Node(position, cost, PacUtils.cloneGrid(grid)));
         }
-
+        System.out.println("Filling out cost table");
         // Fill out cost table
         for(int i = 0; i < costTable.size(); i++)
         {
             Node n = costTable.get(i);
-            //System.out.println("Population at step: " + i);
-            int numNodes = 0;
             while(n.getLeftOvers().size() > 0)
             {
                 Point loc = n.getLocation();  
                 ArrayList<Point> nearestPellets = nearFood(loc, grid ,n.getLeftOvers());
 
-               // printPopulation(costTable);
-
                 for(int j = 1; j < nearestPellets.size(); j++)
                 {
                     Point newLoc = nearestPellets.remove(j);
-
                     // Copy grid and path elements to new instances
                     List<Point> newGrid = new ArrayList<Point>();
                     ArrayList<Point> newPath = new ArrayList<Point>();
-
-                    for(Point k: n.getLeftOvers())
-                    {
-                        newGrid.add(k);
-                    }
-                    for(Point k: n.getPath())
-                    {
-                        newPath.add(k);
-                    }
-                    
+                    newGrid = PacUtils.clonePointList(n.getLeftOvers());
+                    newPath.addAll(n.getPath());
                     Node temp = new Node (newPath, n.getCost(), newGrid);
 
-                    // Calculate the new cos
+                    // Calculate the new cost
                     List<Point> newCostPath = BFSPath.getPath(grid, loc, newLoc);
                     int newCost = newCostPath.size();
                     temp.setCost(newCost);
                     temp.addLocation(newLoc);
-                    //temp.print();
                     costTable.add(temp);
                 }
                 Point newLoc = nearestPellets.remove(0);
-                // Calculate the new cost
                 List<Point> temp = BFSPath.getPath(grid, loc, newLoc);
-
                 int newCost = temp.size();
                 n.setCost(newCost);
                 n.addLocation(newLoc);                                     
             }
-            
-           // System.out.println();
         }
-
-        //System.out.println();
-        //System.out.println();
-
-
+        System.out.println("Finding lowest");
         // Find lowest cost
         int cost = costTable.get(0).getCost();
         List<Point> optimalPath = costTable.get(0).getPath();
@@ -338,8 +310,6 @@ public class PacSimEdit implements PacAction
                 optimalPath = costTable.get(i).getPath();
             }
         }
-
-        System.out.println("OPTIMAL PATH: " + optimalPath);
         return optimalPath;
      }
 
