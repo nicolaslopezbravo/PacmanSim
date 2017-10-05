@@ -72,9 +72,11 @@ class Node
 
     public void print()
     {
-        for(int i = 0; i < size; i++)
+        System.out.print(" :  cost=" + cost + " : " );
+        for(int i = 0; i < path.size(); i++)
         {
-            System.out.print(path.get(i) + " ");
+            System.out.print("[(" + (int)path.get(i).getX()+
+            "," + (int)path.get(i).getY() + ",c] ");
         }
         System.out.println();
     }
@@ -267,10 +269,24 @@ public class PacSimEdit implements PacAction
         // Fill out cost table & find lowest cost
         int cost = 0;
         List<Point> optimalPath = new ArrayList<Point>();
-
+        int nodeIndex = 0;
+        int table = costTable.size();
+        int stepNumber = 0;
         for(int i = 0; i < costTable.size(); i++)
         {
             Node n = costTable.get(i);
+            if(nodeIndex == table || i == 0)
+            {
+                System.out.println();
+                System.out.println("Population at step "+ stepNumber++ +" : ");
+                System.out.println();
+                table = costTable.size();
+                nodeIndex = 0;
+            }
+            
+            System.out.print(nodeIndex++);
+            n.print();
+            
             while(n.getLeftOvers().size() > 0)
             {
                 Point loc = n.getLocation();  
@@ -291,7 +307,7 @@ public class PacSimEdit implements PacAction
                     int newCost = newCostPath.size();
                     temp.setCost(newCost);
                     temp.addLocation(newLoc);
-                    costTable.add(temp);
+                    costTable.add(i+1,temp);
                 }
                 Point newLoc = nearestPellets.remove(0);
                 List<Point> temp = BFSPath.getPath(grid, loc, newLoc);
