@@ -14,40 +14,50 @@ Nicolas Lopez
 class Node
 {
     public int size;
+    public int cost;
     public ArrayList<Point> path;
     public List<Point> notEaten;
-    public int cost;
     private HashMap<Point,Integer> primaryCosts;
+    HashSet<Point> exploredPaths = new HashSet<Point>();
 
-    Node(Point position, int c, PacCell[][] grid, Point pacman)
+    Node(Point position, int c, PacCell[][] grid, int[][] costValues)
     {   // add initial starting point and cost to get there, first gen nodes
         path = new ArrayList<Point>();
         notEaten = new ArrayList<Point>();
         path.add(position);
+        exploredPaths = new HashSet<Point>();
+        exploredPaths.add(position);
         notEaten = PacUtils.findFood(grid);
-        generateHashMap(grid, pacman, PacUtils.findFood(grid));
+        generateHashMap(costValues, notEaten);
         notEaten.remove(position);
         cost = c;
         size = 1;
     }
 
-    Node(ArrayList<Point> path, int cost, List<Point>grid, Point pacman, PacCell[][] gr)
-    {   //newly created nodes from other nodes (2nd gen nodes)
-        this.path = path;
+    Node(ArrayList<Point> path, int cost, List<Point>grid, PacCell[][] gr, int[][] costValues)
+    {   
+        this.path = new ArrayList<Point>();
         notEaten = grid;
         this.cost = cost;
         size = path.size();
-
         List<Point> newGrid = new ArrayList<Point>();
-        newGrid.addAll(path);
+        this.path.addAll(path);
+        exploredPaths = new HashSet<Point>();
+        exploredPaths.addAll(path);
         newGrid.addAll(grid);
-        generateHashMap(gr, pacman, newGrid);
+        generateHashMap(costValues,PacUtils.findFood(gr));
+    }
+
+    public HashSet<Point> getExploredPaths()
+    {
+        return exploredPaths;
     }
 
     public void addLocation(Point loc)
     {
         // add another position & remove it from the grid
         path.add(loc);
+        exploredPaths.add(loc);
         notEaten.remove(loc);
         size++;
     }
@@ -76,14 +86,12 @@ class Node
         return cost;
     }
 
-    private void generateHashMap(PacCell[][] grid, Point pc, List<Point> food)
+    private void generateHashMap(int[][] costValues, List<Point> food)
     {   // make hashmap with initial costs
         primaryCosts = new HashMap<Point,Integer>();
         for(int i = 0 ; i < food.size(); i++)
         {
-            List<Point> costP = BFSPath.getPath(grid,pc,food.get(i));
-            int cost = costP.size();
-            primaryCosts.put(food.get(i),cost);
+            primaryCosts.put(food.get(i),costValues[0][i+1]);
         }
     }
 
@@ -160,7 +168,7 @@ public class PacSimRNNA implements PacAction
         System.out.println("TSP using Repetitive Nearest Neighbor Algorithm by Alexandra Aguirre & Nicolas Lopez");
     }
 
-    private static void printCostTable(List<Point> food, Point pc, PacCell[][] grid)
+    private static int[][] printCostTable(List<Point> food, Point pc, PacCell[][] grid)
     {   
         System.out.println("Cost Table:");
         System.out.println();
@@ -216,6 +224,7 @@ public class PacSimRNNA implements PacAction
             System.out.println();
         }
         System.out.println();
+        return costTable;
     }
 
     private void printTime(int a)
@@ -225,28 +234,30 @@ public class PacSimRNNA implements PacAction
         System.out.println();
     }
 
-    private ArrayList<Point> nearFood(Point p, PacCell[][] grid, List<Point> arr)
+    private ArrayList<Point> nearFood(Point p, List<Point> food, List<Point> arr, int[][] costValues)
     {
         ArrayList<Point> nearestPellets = new ArrayList<Point>();
-        Point newLoc = arr.get(0);
-        List<Point> firstCosts = BFSPath.getPath(grid, p, newLoc);
-        int cost = firstCosts.size();
+        Point newloc = arr.get(0);
+        int indexX = food.indexOf(p) + 1;
+        int indexY = food.indexOf(newloc) + 1;
+        int cost = costValues[indexX][indexY];
 
         for(int i = 1; i < arr.size(); i++)
         {
-            List<Point> newCostPath = BFSPath.getPath(grid, p, arr.get(i));
-            int newCost = newCostPath.size();
+            newloc = arr.get(i);
+            indexX = food.indexOf(p) + 1;
+            indexY = food.indexOf(newloc) + 1;
+            int newCost = costValues[indexX][indexY];
 
             if(newCost <= cost)
             {
                 cost = newCost;
-                Point x = arr.get(i);
-                nearestPellets.add(x);
+                nearestPellets.add(newloc);
             }
         }        
         if(nearestPellets.isEmpty())
         {   
-            nearestPellets.addAll(arr); 
+            nearestPellets.add(newloc); 
         }
         return nearestPellets;
     }
@@ -257,38 +268,40 @@ public class PacSimRNNA implements PacAction
         List<Point> food = PacUtils.findFood(grid);
         int size = PacUtils.numFood(grid);
         Point pacman = pc.getLoc();
-
-        printCostTable(food, pacman, grid);
+        
+        int [][] costValues = printCostTable(food, pacman, grid);
         printFoodArray(food);
-
+        int lowest = 100;
+        int cost = 0;
+        
         ArrayList<Node> costTable = new ArrayList<Node>(size);
-
+        HashSet<HashSet<Point>> exploredPaths = new HashSet<HashSet<Point>>();
         // Initialize the cost table
         for(int row = 0; row < size; row++)
         {   // Calculate the new postion of the possible path
             Point position = food.get(row);
             // Calculate the cost to the each initial food
-            List<Point> initialCost = BFSPath.getPath(grid, pacman, position);
-            int cost = initialCost.size();               
+            cost = costValues[0][row];     
+            Node n = new Node(position, cost, PacUtils.cloneGrid(grid), costValues);       
             // Add the new cost and postion of the possible path to the list of options
-            costTable.add(new Node(position, cost, PacUtils.cloneGrid(grid), pacman));
+            costTable.add(n);
+            exploredPaths.add(n.getExploredPaths());
         }
         
         // Fill out cost table & find lowest cost
-        int cost = 0;
+        cost = 0;
         List<Point> optimalPath = new ArrayList<Point>();
         int nodeIndex = 0;
         int table = food.size();
         int stepNumber = 0;
-
         for(int i = 0; i < costTable.size(); i++)
         {
             Node n = costTable.get(i);
-            
+
             while(n.getLeftOvers().size() > 0)
             {
                 Point loc = n.getLocation();  
-                ArrayList<Point> nearestPellets = nearFood(loc, grid ,n.getLeftOvers());
+                ArrayList<Point> nearestPellets = nearFood(loc, food ,n.getLeftOvers(),costValues);
                 
                 for(int j = 1; j < nearestPellets.size(); j++)
                 {
@@ -298,22 +311,28 @@ public class PacSimRNNA implements PacAction
                     ArrayList<Point> newPath = new ArrayList<Point>();
                     newGrid = PacUtils.clonePointList(n.getLeftOvers());
                     newPath.addAll(n.getPath());
-                    Node temp = new Node (newPath, n.getCost(), newGrid, pacman, PacUtils.cloneGrid(grid));
+                    Node temp = new Node (newPath, n.getCost(), newGrid, PacUtils.cloneGrid(grid), costValues);
 
                     // Calculate the new cost
-                    List<Point> newCostPath = BFSPath.getPath(grid, loc, newLoc);
-                    int newCost = newCostPath.size();
+                    int indexX = food.indexOf(loc) + 1;
+                    int indexY = food.indexOf(newLoc) + 1;
+                    int newCost = costValues[indexX][indexY];
                     temp.setCost(newCost);
                     temp.addLocation(newLoc);
-                    costTable.add(i+1,temp);    // place it in order
+                    if(costTable.size() < food.size()*food.size()*5)
+                    {
+                        costTable.add(i+1,temp);    // place it in order
+                        exploredPaths.add(temp.getExploredPaths());
+                    }   
                 }
-                Point newLoc = nearestPellets.remove(0);
-                List<Point> temp = BFSPath.getPath(grid, loc, newLoc);
-                int newCost = temp.size();
-                n.setCost(newCost);
-                n.addLocation(newLoc);                                     
+                int indexX = food.indexOf(loc) + 1;
+                int indexY = food.indexOf(nearestPellets.get(0)) + 1;
+                int newCost = costValues[indexX][indexY];
+                n.setCost(newCost); 
+                n.addLocation(nearestPellets.get(0));
+                exploredPaths.add(n.getExploredPaths());                                   
             }
-
+                
             if(i == 0 || i == table && stepNumber < food.size())
             {   //print out the population
                 System.out.println();
@@ -323,9 +342,10 @@ public class PacSimRNNA implements PacAction
                 nodeIndex = 0;
             }
             // print number of nodes since last step
-           // System.out.print(nodeIndex++);
-           // n.print(stepNumber);
-
+            
+            System.out.print(nodeIndex++);
+            n.print(stepNumber);
+            
             if(i == 0)  // look for lowest path so far
             {
                 cost = n.getCost();
