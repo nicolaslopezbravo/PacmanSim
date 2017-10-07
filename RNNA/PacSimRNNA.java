@@ -226,6 +226,10 @@ public class PacSimRNNA implements PacAction
 
     private ArrayList<Point> nearFood(Point p, List<Point> food, List<Point> arr, PacCell[][] grid)
     {
+        if(arr.size() <= 0)
+        {
+            return null;
+        } 
         ArrayList<Point> nearestPellets = new ArrayList<Point>();
         Point newLoc = arr.get(0);
         int cost = BFSPath.getPath(grid,p,newLoc).size();
@@ -283,51 +287,54 @@ public class PacSimRNNA implements PacAction
         int nodeIndex = 0;
         int table = food.size();
         int stepNumber = 0;
-        for(int i = 0; i < costTable.size(); i++)
-        {
-            Node n = costTable.get(i);
+        for(int f = 0; f < food.size(); f++)
+        {       
+            //print out the population
+            System.out.println();
+            System.out.println("Population at step "+ stepNumber++ +" : ");
+            System.out.println();
+            table = costTable.size();
+            nodeIndex = 0;
+            ArrayList<Node> tempCostTable = new ArrayList<Node>();
 
-            while(n.getLeftOvers().size() > 0)
+            for(int i = 0; i < costTable.size(); i++)
             {
+                Node n = costTable.get(i);
                 Point loc = n.getLocation();  
                 ArrayList<Point> nearestPellets = nearFood(loc, food ,n.getLeftOvers(),grid);
-                
-                for(int j = 1; j < nearestPellets.size(); j++)
+                if(nearestPellets != null)
                 {
-                    Point newLoc = nearestPellets.remove(j);
-                    List<Point> newGrid = new ArrayList<Point>();
-                    ArrayList<Point> newPath = new ArrayList<Point>();
-                    newGrid = PacUtils.clonePointList(n.getLeftOvers());
-                    newPath.addAll(n.getPath());
-                    Node temp = new Node (newPath, n.getCost(), newGrid, PacUtils.cloneGrid(grid), costValues);
-
-                    // Calculate the new cost
-                    int newCost = BFSPath.getPath(grid,loc,newLoc).size();
-                    temp.setCost(newCost);
-                    temp.addLocation(newLoc);
-                    costTable.add(i+1,temp);    
+                    for(int j = 1; j < nearestPellets.size(); j++)
+                    {
+                        Point newLoc = nearestPellets.remove(j);
+                        List<Point> newGrid = new ArrayList<Point>();
+                        ArrayList<Point> newPath = new ArrayList<Point>();
+                        newGrid = PacUtils.clonePointList(n.getLeftOvers());
+                        newPath.addAll(n.getPath());
+                        Node temp = new Node (newPath, n.getCost(), newGrid, PacUtils.cloneGrid(grid), costValues);
+    
+                        // Calculate the new cost
+                        int newCost = BFSPath.getPath(grid,loc,newLoc).size();
+                        temp.setCost(newCost);
+                        temp.addLocation(newLoc);
+                        tempCostTable.add(temp);    
+                    }
+                    int newCost = BFSPath.getPath(grid,loc,nearestPellets.get(0)).size();
+                    n.setCost(newCost); 
+                    n.addLocation(nearestPellets.get(0)); 
                 }
-                int newCost = BFSPath.getPath(grid,loc,nearestPellets.get(0)).size();
-                n.setCost(newCost); 
-                n.addLocation(nearestPellets.get(0));                                  
+                // print number of nodes since last step
+                System.out.print(nodeIndex++);
+                n.print(stepNumber);
             }
-                
-            if(i == 0 || i == table && stepNumber < food.size())
-            {   //print out the population
-                System.out.println();
-                System.out.println("Population at step "+ stepNumber++ +" : ");
-                System.out.println();
-                table = costTable.size();
-                nodeIndex = 0;
-            }
-            // print number of nodes since last step
-            
-            System.out.print(nodeIndex++);
-            n.print(stepNumber);
-            
-            if(i == 0)  // look for lowest path so far
+            costTable.addAll(tempCostTable);
+        }
+
+        for(int i = 0; i < costTable.size(); i++)
+        {
+            if(i == 0)  
             {
-                cost = n.getCost();
+                cost = costTable.get(0).getCost();
                 optimalPath = costTable.get(0).getPath();
             }
             else if(costTable.get(i).getCost() < cost)
@@ -336,7 +343,6 @@ public class PacSimRNNA implements PacAction
                 optimalPath = costTable.get(i).getPath();
             }
         }
-
         return optimalPath;
      }
 
