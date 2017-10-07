@@ -11,7 +11,7 @@ Nicolas Lopez
 
 9-5-17
 */
-class Node
+class Node implements Comparable<Node>
 {
     public int size;
     public int cost;
@@ -84,17 +84,23 @@ class Node
         }
     }
 
-    public void print(int size)
+    public void print(int size, PacCell[][] grid)
     {   // Make sure it doesn't go over the total amount of food
         if(size > path.size() + notEaten.size()){size--;}
 
         System.out.print(" :  cost=" + cost + " : " );
-        for(int i = 0; i < size; i++)
+        Point p = path.get(0);
+        int x = (int)p.getX();
+        int y = (int)p.getY();
+        int c = primaryCosts.get(p);
+        System.out.print("[(" + x + "," + y + "),"+ c +"] ");
+        
+        for(int i = 1; i < size; i++)
         {
-            Point p = path.get(i);
-            int x = (int)p.getX();
-            int y = (int)p.getY();
-            int c = primaryCosts.get(p);
+            p = path.get(i);
+            x = (int)p.getX();
+            y = (int)p.getY();
+            c = BFSPath.getPath(grid,path.get(i),path.get(i-1)).size();
             System.out.print("[(" + x + "," + y + "),"+ c +"] ");
         }
         System.out.println();
@@ -103,7 +109,13 @@ class Node
     public List<Point> getLeftOvers()
     {
         return this.notEaten;
-    }     
+    } 
+    @Override
+    public int compareTo(Node comparesTu)
+    {
+        int comp =((Node)comparesTu).getCost();
+        return this.cost - comp;
+    }
 }
 
 public class PacSimRNNA implements PacAction
@@ -323,13 +335,25 @@ public class PacSimRNNA implements PacAction
                     n.setCost(newCost); 
                     n.addLocation(nearestPellets.get(0)); 
                 }
+            }
+
+            Collections.sort(costTable);
+            
+            System.out.print(nodeIndex++);
+            costTable.get(0).print(stepNumber, grid);
+
+            for(int i = 1; i < costTable.size(); i++)
+            {
                 // print number of nodes since last step
                 System.out.print(nodeIndex++);
-                n.print(stepNumber);
+                costTable.get(i).print(stepNumber, grid);
             }
+
             costTable.addAll(tempCostTable);
         }
 
+
+        // find optimal path
         for(int i = 0; i < costTable.size(); i++)
         {
             if(i == 0)  
