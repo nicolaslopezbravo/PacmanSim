@@ -234,31 +234,32 @@ public class PacSimRNNA implements PacAction
         System.out.println();
     }
 
-    private ArrayList<Point> nearFood(Point p, List<Point> food, List<Point> arr, int[][] costValues)
+    private ArrayList<Point> nearFood(Point p, List<Point> food, List<Point> arr, PacCell[][] grid)
     {
         ArrayList<Point> nearestPellets = new ArrayList<Point>();
-        Point newloc = arr.get(0);
-        int indexX = food.indexOf(p) + 1;
-        int indexY = food.indexOf(newloc) + 1;
-        int cost = costValues[indexX][indexY];
+        Point newLoc = arr.get(0);
+        int cost = BFSPath.getPath(grid,p,newLoc).size();
 
         for(int i = 1; i < arr.size(); i++)
         {
-            newloc = arr.get(i);
-            indexX = food.indexOf(p) + 1;
-            indexY = food.indexOf(newloc) + 1;
-            int newCost = costValues[indexX][indexY];
-
-            if(newCost <= cost)
+            newLoc = arr.get(i);
+            int newCost = BFSPath.getPath(grid,p,newLoc).size();
+            if(newCost < cost)
             {
                 cost = newCost;
-                nearestPellets.add(newloc);
             }
-        }        
-        if(nearestPellets.isEmpty())
-        {   
-            nearestPellets.add(newloc); 
         }
+
+        for(int i = 0; i < arr.size(); i++)
+        {
+            newLoc = arr.get(i);
+            int pathCost = BFSPath.getPath(grid,p,newLoc).size();
+            if(pathCost == cost)
+            {
+                nearestPellets.add(newLoc);
+            }
+        }
+        
         return nearestPellets;
     }
 
@@ -301,7 +302,7 @@ public class PacSimRNNA implements PacAction
             while(n.getLeftOvers().size() > 0)
             {
                 Point loc = n.getLocation();  
-                ArrayList<Point> nearestPellets = nearFood(loc, food ,n.getLeftOvers(),costValues);
+                ArrayList<Point> nearestPellets = nearFood(loc, food ,n.getLeftOvers(),grid);
                 
                 for(int j = 1; j < nearestPellets.size(); j++)
                 {
@@ -314,23 +315,19 @@ public class PacSimRNNA implements PacAction
                     Node temp = new Node (newPath, n.getCost(), newGrid, PacUtils.cloneGrid(grid), costValues);
 
                     // Calculate the new cost
-                    int indexX = food.indexOf(loc) + 1;
-                    int indexY = food.indexOf(newLoc) + 1;
-                    int newCost = costValues[indexX][indexY];
+                    int newCost = BFSPath.getPath(grid,loc,newLoc).size();
                     temp.setCost(newCost);
                     temp.addLocation(newLoc);
-                    if(costTable.size() < food.size()*food.size()*5)
-                    {
+                    //if(costTable.size() < food.size()*food.size()*5)
+                    
                         costTable.add(i+1,temp);    // place it in order
-                        exploredPaths.add(temp.getExploredPaths());
-                    }   
+                        //exploredPaths.add(temp.getExploredPaths());
+                       
                 }
-                int indexX = food.indexOf(loc) + 1;
-                int indexY = food.indexOf(nearestPellets.get(0)) + 1;
-                int newCost = costValues[indexX][indexY];
+                int newCost = BFSPath.getPath(grid,loc,nearestPellets.get(0)).size();
                 n.setCost(newCost); 
                 n.addLocation(nearestPellets.get(0));
-                exploredPaths.add(n.getExploredPaths());                                   
+                //exploredPaths.add(n.getExploredPaths());                                   
             }
                 
             if(i == 0 || i == table && stepNumber < food.size())
