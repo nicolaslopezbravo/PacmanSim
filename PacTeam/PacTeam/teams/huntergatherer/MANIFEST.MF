@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Class-Path: huntergatherer/team3.jar
+MAin-Class: Player
