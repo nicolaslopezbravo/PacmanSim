@@ -18,14 +18,19 @@ public class Player extends AbstractPlayer
    {
       System.out.println("Player constructor...");
    }
-
-   private int strat;
-
+   
    @Override
    public void init() 
    {
-      System.out.println( morphTeam + " " + morphID + " team Player init...");
-      strat = 0;
+      System.out.println(morphTeam + " " + morphID + " team huntergatherer init...");
+   }
+
+   private static boolean foodOrOp(Point op, Point food, Point p, PacCell [][] grid)
+   {
+       List<Point> o = BFSPath.getPath(grid,p,op);
+       List<Point> fo = BFSPath.getPath(grid,p,food);
+
+       return (o.size() >= fo.size());
    }
    
    @Override
@@ -34,49 +39,40 @@ public class Player extends AbstractPlayer
       PacCell[][] grid = ( PacCell[][] ) state;      
       PacFace[] faces = PacUtils.randomFaces();
       Point p = morph.getLoc();
-      boolean hunter = (this.getID() == 1) ? true : false;
-      boolean gatherer = !hunter;
 
-      if(hunter)
-      {
-            if(morph.getMode() == MorphMode.GHOST && strat >= 4)
+    if(morph.getMode() == MorphMode.GHOST) //hunter
+    {
+        // if there is an opposing Pacman, go after it
+        PacFace face = hunt(grid, p);
+        if(face != null) return face;
+    }else // he's a pacman, go gather or hunt?
+    {
+        PacTeam opponent = PacUtils.opposingTeam(morphTeam);
+        Point op = PacUtils.nearestMorph(grid,p,opponent);
+        Point food = PacUtils.nearestFood(grid,p,morphTeam);
+        boolean dontHunt = foodOrOp(op,food,p,grid); //decide to eat or hunt
+        if(dontHunt) //eat
+        {   
+            for(PacFace face : faces) 
             {
-                // if there is an opposing Pacman, go after it
-                PacFace face = hunt(grid, p);
-                if(face != null) return face;
-                strat = 0;
-
-            }else
-            {
-                // go protect the food
-                Point target = PacUtils.nearestFood(grid, p, morphTeam);
-
-                List<Point> path = BFSPath.getPath(grid, p, target);
-                Point next = path.remove(0);
-                if(next != null && open(grid, next)) 
+                PacCell pc = PacUtils.neighbor(face, p, grid);
+                if(pc instanceof MorphFoodCell &&
+                    ((MorphFoodCell) pc).getTeam() != morph.getTeam())
                 {
-                   PacFace face = PacUtils.direction(p, next);
-                   if(face != null) return face;
+                   return face;
                 }
-                strat++; // have it go on for a while to pretevent thrashing
-            }
-      }
-      if(gatherer)
-      {
-          // avoid opposing ghosts if they are too close
-          PacFace face = avoid(grid, p, faces);
-          if(face != null) return face;
-          for(PacFace f : faces) 
-          {
-            PacCell pc = PacUtils.neighbor(f, p, grid); // if the food is edible
-            if(pc instanceof MorphFoodCell && ((MorphFoodCell)pc).getTeam() != morph.getTeam()) 
-            {
-                return face;
-            }
-          }
-      }
-      // otherwise, go for the nearest food or a random cell
-      return advance(grid, p, faces);
+             }
+             
+             // avoid opposing ghosts if they are too close
+             PacFace face = avoid( grid, p, faces );
+             if(face != null) return face;
+        }else
+        {
+            PacFace face = hunt(grid, p);
+            if(face != null) return face;
+        } 
+    }
+      return advance(grid,p,faces);
    }
    
    private PacFace hunt(PacCell[][] grid, Point p) 
